@@ -1,0 +1,8 @@
+# Forbidden Terms Configuration
+# Lines starting with # are comments
+# This file is excluded from scans itself
+# Contains prior-project identifiers (case-insensitive matching)
+
+# Prior research project identifiers
+CuKD-XAI
+TinyRF-KD

@@ -1,0 +1,103 @@
+# Virtual environments
+.venv
+venv
+env
+ENV
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed_cfg
+*.egg
+
+# Testing
+.pytest_cache
+.coverage
+htmlcov/
+.tox/
+.nox/
+.coverage.*
+*.cover
+.hypothesis/
+
+# Linting / type checking
+.ruff_cache
+.mypy_cache/
+.pytype/
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Local configs
+.env
+.env.*
+!.env.example
+.env.local
+
+# Generated data files
+datasets/
+data/raw/
+data/processed/
+data/final/
+generated/
+*_gen
+*.parquet
+*.ndjson
+
+# Runtime output
+reports/runtime/
+reports/generated/
+output/
+outputs/
+
+# Checkpoints
+checkpoints/
+*.checkpoint
+.ckpt
+
+# Archive files
+*.tar
+*.gz
+*.zip
+*.7z
+*.rar
+
+# HDFS / Kafka volumes
+hdfs/
+hadoop/
+kafka-data/
+kafka-volumes/
+kafka-logs/
+
+# Jupyter
+.ipynb_checkpoints
+
+# Logs
+*.log
+logs/
+
+# Caches
+*.cache
+.caches/
