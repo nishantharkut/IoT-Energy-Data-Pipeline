@@ -1,0 +1,186 @@
+name: iot-energy-data-pipeline
+
+x-spark-image: &spark-image
+  build:
+    context: .
+    dockerfile: infra/spark/Dockerfile
+  image: iot-energy-pipeline-spark:3.5.1
+
+x-hadoop-image: &hadoop-image
+  build:
+    context: .
+    dockerfile: infra/hadoop/Dockerfile
+  image: iot-energy-pipeline-hadoop:3.4.3
+
+services:
+  kafka:
+    image: apache/kafka:3.7.1@sha256:3940ef8e220ead51db7057e9ee0554bfe7c7faac725bb49ac5fcf3b8d0db33b9
+    hostname: kafka
+    environment:
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+      KAFKA_NUM_PARTITIONS: "3"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    ports:
+      - "127.0.0.1:29092:29092"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - pipeline
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 20s
+    deploy:
+      resources:
+        limits: {cpus: "2.0", memory: 2G}
+
+  spark:
+    <<: *spark-image
+    hostname: spark
+    command:
+      - /opt/spark/bin/spark-class
+      - org.apache.spark.deploy.master.Master
+      - --host
+      - spark
+      - --port
+      - "7077"
+      - --webui-port
+      - "8080"
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - type: bind
+        source: ${PIPELINE_RUNTIME_DIR:-./reports/runtime}
+        target: /workspace/runtime
+    networks:
+      - pipeline
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import socket; socket.create_connection((\"spark\",7077),2).close()'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    deploy:
+      resources:
+        limits: {cpus: "2.0", memory: 2G}
+
+  spark-worker:
+    <<: *spark-image
+    hostname: spark-worker
+    command:
+      - /opt/spark/bin/spark-class
+      - org.apache.spark.deploy.worker.Worker
+      - spark://spark:7077
+      - --cores
+      - "2"
+      - --memory
+      - 2G
+    depends_on:
+      spark:
+        condition: service_healthy
+    volumes:
+      - type: bind
+        source: ${PIPELINE_RUNTIME_DIR:-./reports/runtime}
+        target: /workspace/runtime
+    networks:
+      - pipeline
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import socket; socket.create_connection((\"spark-worker\",8081),2).close()'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    deploy:
+      resources:
+        limits: {cpus: "2.0", memory: 3G}
+
+  spark-client:
+    <<: *spark-image
+    hostname: spark-client
+    depends_on:
+      spark:
+        condition: service_healthy
+    volumes:
+      - type: bind
+        source: ${PIPELINE_RUNTIME_DIR:-./reports/runtime}
+        target: /workspace/runtime
+    networks:
+      - pipeline
+    deploy:
+      resources:
+        limits: {cpus: "2.0", memory: 2G}
+
+  hdfs:
+    <<: *hadoop-image
+    hostname: hdfs
+    command: ["hdfs"]
+    ports:
+      - "127.0.0.1:9870:9870"
+    volumes:
+      - hdfs-name:/var/lib/hadoop-hdfs/name
+      - hdfs-data:/var/lib/hadoop-hdfs/data
+      - hadoop-logs:/opt/hadoop/logs
+      - type: bind
+        source: ${PIPELINE_RUNTIME_DIR:-./reports/runtime}
+        target: /workspace/runtime
+    networks:
+      - pipeline
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/hadoop/bin/hdfs dfsadmin -report >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 8s
+      retries: 18
+      start_period: 30s
+    deploy:
+      resources:
+        limits: {cpus: "2.0", memory: 3G}
+
+  hadoop:
+    <<: *hadoop-image
+    hostname: hadoop
+    command: ["yarn"]
+    depends_on:
+      hdfs:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8088:8088"
+    volumes:
+      - hadoop-logs:/opt/hadoop/logs
+      - type: bind
+        source: ${PIPELINE_RUNTIME_DIR:-./reports/runtime}
+        target: /workspace/runtime
+    networks:
+      - pipeline
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/hadoop/bin/yarn node -list 2>/dev/null | grep -q RUNNING"]
+      interval: 10s
+      timeout: 8s
+      retries: 18
+      start_period: 30s
+    deploy:
+      resources:
+        limits: {cpus: "2.0", memory: 3G}
+
+networks:
+  pipeline:
+    driver: bridge
+
+volumes:
+  kafka-data:
+  hdfs-name:
+  hdfs-data:
+  hadoop-logs:

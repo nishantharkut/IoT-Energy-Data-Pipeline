@@ -171,7 +171,9 @@ The canonical source event contains:
 - source relative path, workbook sheet, and row number
 - meter identifier
 - Brick entity identifier when matched
-- building and equipment identifiers when available
+- all source-declared building and zone identifiers when available
+- all metered entities and their explicit RDF types
+- source Brick unit URI and HKUST usage type when available
 - original timestamp text
 - source timezone
 - event time in UTC
@@ -202,11 +204,13 @@ automatically discarded. A record is rejected only by a documented source or
 schema rule.
 
 Brick enrichment is deliberately narrow. The registered TTL file and detected
-Brick version are recorded by hash. A meter may match zero or one Brick entity.
-No match leaves enrichment fields null and remains valid. Multiple matches,
-malformed TTL, or contradictory building assignments fail canonicalization and
-produce a deterministic join report. No ontology reasoning beyond the required
-meter-to-building and meter-to-equipment lookup is implemented.
+Brick namespace are recorded by hash. A meter may match zero or one meter
+entity. No match leaves the entity null and relationship collections empty but
+remains valid. Multiple meter matches, malformed TTL, conflicting timeseries
+identifiers, or contradictory scalar metadata fail canonicalization. Building,
+zone, and metered-entity relationships remain sorted collections because the
+deposited graph is legitimately multi-valued. No inferred ontology reasoning
+is used; only explicit `hasPart` and `isMeteredBy` edges are projected.
 
 ## 8. Replay and Completion Contracts
 
@@ -214,10 +218,16 @@ Replay schedules are deterministic for a canonical snapshot, configuration,
 and seed. Fault injection adds deliveries. It never removes the only valid
 delivery of a source event.
 
-The producer writes a run manifest before sending data. It waits for Kafka
-acknowledgements, emits one terminal control record per partition after that
-partition's data, flushes the producer, and writes a receipt containing sent
-counts and terminal offsets.
+The producer writes a run manifest before sending data. At production scale,
+the deterministic delivery schedule is line-delimited NDJSON with a closed
+metadata document and SHA-256 binding. The producer streams that schedule,
+waits for Kafka acknowledgements, and appends each acknowledgement to an
+NDJSON ledger. It emits one terminal control record per partition after that
+partition's data, flushes the producer, and writes a small receipt containing
+sent counts, terminal offsets, and the acknowledgement-ledger count, size, and
+hash. Interrupted replay resumes only after validating the acknowledged prefix
+against the immutable schedule. Compact fixture tests may use the equivalent
+version-1 in-memory contract.
 
 The Spark driver finalizes a run only when:
 
@@ -269,13 +279,16 @@ The Hadoop Streaming oracle reads the canonical NDJSON snapshot from HDFS. It
 does not import Spark transformation code and does not consume Spark Gold
 records as its input.
 
-It computes counts, scaled sums, minimum and maximum event times, and quality
-flag counts by declared grouping keys. Reconciliation compares sorted,
-canonical aggregate records field by field.
+Two independently implemented Hadoop Streaming jobs are used. The source-record
+job emits a canonical projection of every valid source event, while the
+aggregate job computes counts, scaled sums, minimum and maximum event times,
+and quality-flag counts by declared grouping keys. Reconciliation compares both
+sorted source records and sorted aggregate records field by field.
 
-The oracle validates aggregate logic and source coverage. Producer receipts
-and Bronze delivery counts separately validate Kafka-to-Bronze completeness.
-The report must state this boundary.
+The source-record oracle validates exact finalized content and the aggregate
+oracle independently validates grouped arithmetic and source coverage.
+Producer receipts and Bronze delivery counts separately validate
+Kafka-to-Bronze completeness. The report must state this boundary.
 
 ## 11. Experiments
 
@@ -295,6 +308,10 @@ clean schedule. The third scale resolves to `min(5_000_000, full_count)` and is
 omitted when it duplicates the 1M scale. Performance reporting uses median,
 minimum, and maximum. The machine, container versions, partition count, replay
 rate, and data hashes are recorded for every run.
+
+Watermark fixtures use one partition and one offset per trigger. The forced
+micro-batch sequence makes prior-watermark behavior deterministic; those
+settings are semantic fixtures and are excluded from throughput claims.
 
 ## 12. Dashboard and Report
 
@@ -328,9 +345,10 @@ The coursework is ready for demonstration only when:
 2. tracked files contain no forbidden prior-project references or source data
 3. canonical event identities are unique and deterministic
 4. clean and fault-injected fixture runs reconcile at every layer
-5. Gold equals the Hadoop oracle for every exact aggregate field
+5. Gold equals the Hadoop oracle for every exact source-record and aggregate field
 6. malformed deliveries are preserved in Bronze and classified in quarantine
 7. a resumed run has the same semantic finalized records as an uninterrupted run
 8. the dashboard refuses unfinished or unreconciled runs
 9. unit, property, contract, and container integration tests pass
-10. every reported number is generated from a finalized run manifest
+10. a restrictive watermark changes the operational candidate while exact Gold and oracle records remain unchanged
+11. every reported number is generated from a finalized run manifest

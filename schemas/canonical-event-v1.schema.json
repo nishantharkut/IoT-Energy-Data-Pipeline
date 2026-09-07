@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "canonical-event-v1.schema.json",
+  "title": "Canonical smart-meter source event",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "dataset_version",
+    "source_variant",
+    "source_event_id",
+    "source_relative_path",
+    "workbook_sheet",
+    "source_row_number",
+    "meter_id",
+    "brick_entity_id",
+    "brick_building_ids",
+    "brick_zone_ids",
+    "brick_metered_entities",
+    "brick_unit_uri",
+    "brick_usage_type",
+    "original_timestamp_text",
+    "source_timezone",
+    "event_time_utc",
+    "original_numeric_text",
+    "scaled_value",
+    "decimal_scale",
+    "measurement_kind",
+    "unit",
+    "quality_flags"
+  ],
+  "properties": {
+    "schema_version": {"const": "canonical-event-v1"},
+    "dataset_version": {"type": "string", "minLength": 1},
+    "source_variant": {"enum": ["raw", "clean"]},
+    "source_event_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "source_relative_path": {"type": "string", "minLength": 1},
+    "workbook_sheet": {"type": "string", "minLength": 1},
+    "source_row_number": {"type": "integer", "minimum": 1},
+    "meter_id": {"type": "string", "minLength": 1},
+    "brick_entity_id": {"type": ["string", "null"]},
+    "brick_building_ids": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "brick_zone_ids": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "brick_metered_entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["entity_id", "type_uris"],
+        "properties": {
+          "entity_id": {"type": "string", "minLength": 1},
+          "type_uris": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1},
+            "uniqueItems": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "uniqueItems": true
+    },
+    "brick_unit_uri": {"type": ["string", "null"]},
+    "brick_usage_type": {"type": ["string", "null"]},
+    "original_timestamp_text": {"type": "string", "minLength": 1},
+    "source_timezone": {"type": "string", "minLength": 1},
+    "event_time_utc": {"type": "string", "format": "date-time"},
+    "original_numeric_text": {"type": "string", "minLength": 1},
+    "scaled_value": {
+      "type": "integer",
+      "minimum": -9223372036854775808,
+      "maximum": 9223372036854775807
+    },
+    "decimal_scale": {"type": "integer", "minimum": 0},
+    "measurement_kind": {"type": "string", "minLength": 1},
+    "unit": {"type": "string", "minLength": 1},
+    "quality_flags": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": false
+}

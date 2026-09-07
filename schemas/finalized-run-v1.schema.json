@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://coursework.local/schemas/finalized-run-v1.schema.json",
+  "title": "Sealed finalized coursework run",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "reconciled",
+    "immutable",
+    "replay_run_id",
+    "replay_manifest_hash",
+    "reconciliation_sha256",
+    "decision_impact_sha256",
+    "machine_metadata_sha256",
+    "artifacts",
+    "views"
+  ],
+  "properties": {
+    "schema_version": {"const": "finalized-run-v1"},
+    "status": {"const": "finalized"},
+    "reconciled": {"const": true},
+    "immutable": {"const": true},
+    "replay_run_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "replay_manifest_hash": {"$ref": "#/$defs/sha256"},
+    "reconciliation_sha256": {"$ref": "#/$defs/sha256"},
+    "decision_impact_sha256": {"$ref": "#/$defs/sha256"},
+    "machine_metadata_sha256": {"$ref": "#/$defs/sha256"},
+    "artifacts": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/artifact"}
+    },
+    "views": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provenance_status",
+        "throughput_layers",
+        "fault_disposition",
+        "energy_quality",
+        "storage_queries",
+        "reconciliation"
+      ],
+      "properties": {
+        "provenance_status": {"$ref": "#/$defs/view"},
+        "throughput_layers": {"$ref": "#/$defs/view"},
+        "fault_disposition": {"$ref": "#/$defs/view"},
+        "energy_quality": {"$ref": "#/$defs/view"},
+        "storage_queries": {"$ref": "#/$defs/view"},
+        "reconciliation": {"$ref": "#/$defs/view"}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relative_path", "byte_size", "sha256"],
+      "properties": {
+        "relative_path": {"type": "string", "minLength": 1},
+        "byte_size": {"type": "integer", "minimum": 0},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "view": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "rows"],
+      "properties": {
+        "title": {"type": "string", "minLength": 1},
+        "description": {"type": "string"},
+        "rows": {"type": "array", "items": {"type": "object"}}
+      }
+    }
+  }
+}

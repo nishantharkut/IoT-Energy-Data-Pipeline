@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://coursework.local/schemas/canonicalization-rules-v1.schema.json",
+  "title": "Evidence-bound canonicalization rules",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source_timezone",
+    "timezone_evidence",
+    "source_layout_file",
+    "source_layout_sha256",
+    "measurements"
+  ],
+  "properties": {
+    "schema_version": {"const": "canonicalization-rules-v1"},
+    "source_timezone": {"type": "string", "minLength": 1},
+    "timezone_evidence": {"type": "string", "minLength": 1},
+    "source_layout_file": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+    },
+    "source_layout_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "measurements": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "measurement_kind",
+          "unit",
+          "decimal_scale",
+          "evidence",
+          "expected_brick_unit_suffix"
+        ],
+        "properties": {
+          "measurement_kind": {"type": "string", "minLength": 1},
+          "unit": {"type": "string", "minLength": 1},
+          "decimal_scale": {"type": "integer", "minimum": 0},
+          "evidence": {"type": "string", "minLength": 1},
+          "expected_brick_unit_suffix": {
+            "type": ["string", "null"],
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

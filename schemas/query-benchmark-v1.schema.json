@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://coursework.local/schemas/query-benchmark-v1.schema.json",
+  "title": "Read-only SQL query benchmark",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "status", "run_id", "gold_manifest_sha256",
+    "decision_impact_sha256", "parameters", "results"
+  ],
+  "properties": {
+    "schema_version": {"const": "query-benchmark-v1"},
+    "status": {"const": "complete"},
+    "run_id": {"type": "string", "minLength": 1},
+    "gold_manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "decision_impact_sha256": {"$ref": "#/$defs/sha256"},
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "meter_id", "building_id", "window_start_utc", "window_end_utc"
+      ],
+      "properties": {
+        "meter_id": {"type": "string", "minLength": 1},
+        "building_id": {"type": "string"},
+        "window_start_utc": {"type": "string", "minLength": 1},
+        "window_end_utc": {"type": "string", "minLength": 1}
+      }
+    },
+    "results": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "prefixItems": [
+        {
+          "allOf": [
+            {"$ref": "#/$defs/query_result"},
+            {"properties": {"query": {"const": "meter"}}}
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/query_result"},
+            {"properties": {"query": {"const": "building"}}}
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/query_result"},
+            {"properties": {"query": {"const": "time_window"}}}
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/query_result"},
+            {"properties": {"query": {"const": "quality"}}}
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/query_result"},
+            {"properties": {"query": {"const": "exposure"}}}
+          ]
+        }
+      ],
+      "items": false
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["median", "minimum", "maximum"],
+      "properties": {
+        "median": {"type": "number", "minimum": 0},
+        "minimum": {"type": "number", "minimum": 0},
+        "maximum": {"type": "number", "minimum": 0}
+      }
+    },
+    "query_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "query", "repetitions", "row_count", "seconds", "sql_sha256"
+      ],
+      "properties": {
+        "query": {
+          "enum": ["meter", "building", "time_window", "quality", "exposure"]
+        },
+        "repetitions": {"const": 3},
+        "row_count": {"type": "integer", "minimum": 0},
+        "seconds": {"$ref": "#/$defs/summary"},
+        "sql_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

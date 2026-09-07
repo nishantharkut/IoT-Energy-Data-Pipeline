@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://coursework.local/schemas/experiment-results-v1.schema.json",
+  "title": "Complete sealed experiment results",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "status", "experiment_plan_sha256",
+    "machine_metadata_sha256", "snapshot_manifest_sha256", "runs",
+    "performance_summary", "correctness_semantic_equivalence",
+    "recovery_semantic_equivalence", "watermark_effect",
+    "monetary_interpretation"
+  ],
+  "properties": {
+    "schema_version": {"const": "experiment-results-v1"},
+    "status": {"const": "complete"},
+    "experiment_plan_sha256": {"$ref": "#/$defs/sha256"},
+    "machine_metadata_sha256": {"$ref": "#/$defs/sha256"},
+    "snapshot_manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "runs": {
+      "type": "array", "minItems": 15, "items": {"$ref": "#/$defs/run"}
+    },
+    "performance_summary": {
+      "type": "array",
+      "minItems": 2,
+      "items": {"$ref": "#/$defs/performance_summary"}
+    },
+    "correctness_semantic_equivalence": {
+      "$ref": "#/$defs/correctness_equivalence"
+    },
+    "recovery_semantic_equivalence": {
+      "$ref": "#/$defs/recovery_equivalence"
+    },
+    "watermark_effect": {"$ref": "#/$defs/watermark_effect"},
+    "monetary_interpretation": {
+      "const": "hypothetical scenarios; not HKUST results"
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["median", "minimum", "maximum"],
+      "properties": {
+        "median": {"type": "number", "minimum": 0},
+        "minimum": {"type": "number", "minimum": 0},
+        "maximum": {"type": "number", "minimum": 0}
+      }
+    },
+    "semantic_hashes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gold_source_records", "gold_aggregates", "hadoop_source_records",
+        "hadoop_aggregates"
+      ],
+      "properties": {
+        "gold_source_records": {"$ref": "#/$defs/sha256"},
+        "gold_aggregates": {"$ref": "#/$defs/sha256"},
+        "hadoop_source_records": {"$ref": "#/$defs/sha256"},
+        "hadoop_aggregates": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_id", "experiment", "event_count", "repetition", "status",
+        "workflow_seconds", "run_manifest_sha256", "artifact_count"
+      ],
+      "properties": {
+        "run_id": {"type": "string", "minLength": 1},
+        "experiment": {
+          "enum": ["correctness", "recovery", "watermark", "scale"]
+        },
+        "event_count": {
+          "oneOf": [
+            {"const": "fixture"},
+            {"type": "integer", "minimum": 100000}
+          ]
+        },
+        "repetition": {"type": "integer", "minimum": 1},
+        "status": {"const": "finalized"},
+        "workflow_seconds": {"type": "number", "minimum": 0},
+        "run_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "artifact_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "performance_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_count", "repetitions", "metrics"],
+      "properties": {
+        "event_count": {"type": "integer", "minimum": 100000},
+        "repetitions": {"const": 3},
+        "metrics": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "gold_finalization_seconds", "hadoop_verification_seconds",
+            "end_to_end_verification_seconds", "workflow_seconds"
+          ],
+          "properties": {
+            "gold_finalization_seconds": {"$ref": "#/$defs/summary"},
+            "hadoop_verification_seconds": {"$ref": "#/$defs/summary"},
+            "end_to_end_verification_seconds": {"$ref": "#/$defs/summary"},
+            "workflow_seconds": {"$ref": "#/$defs/summary"}
+          }
+        }
+      }
+    },
+    "correctness_equivalence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reference_run_id", "run_hashes"],
+      "properties": {
+        "status": {"const": "identical"},
+        "reference_run_id": {"const": "correctness-clean-r01"},
+        "run_hashes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "correctness-clean-r01", "correctness-duplicate-r01",
+            "correctness-delayed-r01", "correctness-malformed-r01",
+            "correctness-combined-r01"
+          ],
+          "properties": {
+            "correctness-clean-r01": {"$ref": "#/$defs/semantic_hashes"},
+            "correctness-duplicate-r01": {"$ref": "#/$defs/semantic_hashes"},
+            "correctness-delayed-r01": {"$ref": "#/$defs/semantic_hashes"},
+            "correctness-malformed-r01": {"$ref": "#/$defs/semantic_hashes"},
+            "correctness-combined-r01": {"$ref": "#/$defs/semantic_hashes"}
+          }
+        }
+      }
+    },
+    "hash_pair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uninterrupted_sha256", "resumed_sha256"],
+      "properties": {
+        "uninterrupted_sha256": {"$ref": "#/$defs/sha256"},
+        "resumed_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "recovery_equivalence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "comparisons"],
+      "properties": {
+        "status": {"const": "identical"},
+        "comparisons": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "gold_source_records", "hadoop_source_records", "gold_aggregates",
+            "hadoop_aggregates"
+          ],
+          "properties": {
+            "gold_source_records": {"$ref": "#/$defs/hash_pair"},
+            "hadoop_source_records": {"$ref": "#/$defs/hash_pair"},
+            "gold_aggregates": {"$ref": "#/$defs/hash_pair"},
+            "hadoop_aggregates": {"$ref": "#/$defs/hash_pair"}
+          }
+        }
+      }
+    },
+    "watermark_effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gold_status", "candidate_difference_exposed",
+        "retaining_affected_meter_periods", "restrictive_affected_meter_periods",
+        "semantic_hashes"
+      ],
+      "properties": {
+        "gold_status": {"const": "identical"},
+        "candidate_difference_exposed": {"const": true},
+        "retaining_affected_meter_periods": {"type": "integer", "minimum": 0},
+        "restrictive_affected_meter_periods": {"type": "integer", "minimum": 1},
+        "semantic_hashes": {"$ref": "#/$defs/semantic_hashes"}
+      }
+    }
+  }
+}

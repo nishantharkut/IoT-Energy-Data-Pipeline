@@ -1,0 +1,1 @@
+"""Independent Hadoop-compatible oracle."""

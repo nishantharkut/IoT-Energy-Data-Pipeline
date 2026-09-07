@@ -1,0 +1,33 @@
+[correctness]
+faults = ["clean", "duplicate", "delayed", "malformed", "combined"]
+repetitions = 1
+
+[scale]
+requested_sizes = [100000, 1000000, 5000000]
+final_size_rule = "min(5000000, full_dataset)"
+repetitions = 3
+fault = "clean"
+
+[recovery]
+modes = ["uninterrupted", "interrupted_resumed"]
+fixture_only = true
+
+[watermark]
+retaining = "24 hours"
+restrictive = "1 minute"
+
+[storage]
+formats = ["ndjson", "parquet_zstd_unpartitioned", "parquet_zstd_partitioned"]
+
+[queries]
+names = ["meter", "building", "time_window", "quality", "exposure"]
+
+[business]
+normalized_rates = [0.5, 1.0, 2.0]
+currency_label = "hypothetical scenario currency units"
+
+[execution]
+require_machine_metadata = true
+require_reconciliation = true
+full_runs = "designated-machine-only-after-fixture-acceptance"
+live_demo_max_events = 100000

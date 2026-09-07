@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://coursework.local/schemas/machine-metadata-v1.schema.json",
+  "title": "Experiment machine metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "captured_at_utc",
+    "execution_context",
+    "hostname",
+    "operating_system",
+    "processor",
+    "logical_cpu_count",
+    "memory_bytes",
+    "software"
+  ],
+  "properties": {
+    "schema_version": {"const": "machine-metadata-v1"},
+    "captured_at_utc": {"type": "string", "format": "date-time"},
+    "execution_context": {"enum": ["fixture", "designated_machine"]},
+    "hostname": {"type": "string", "minLength": 1},
+    "operating_system": {"type": "string", "minLength": 1},
+    "processor": {"type": "string", "minLength": 1},
+    "logical_cpu_count": {"type": "integer", "minimum": 1},
+    "memory_bytes": {"type": "integer", "minimum": 1},
+    "software": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["python", "docker", "kafka", "spark", "hadoop"],
+      "properties": {
+        "python": {"type": "string", "minLength": 1},
+        "docker": {"type": "string", "minLength": 1},
+        "kafka": {"type": "string", "minLength": 1},
+        "spark": {"type": "string", "minLength": 1},
+        "hadoop": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://coursework.local/schemas/decision-impact-v1.schema.json",
+  "title": "Verified hypothetical decision-impact report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "run_id",
+    "reconciliation_sha256",
+    "affected_meter_period_count",
+    "affected_meter_periods",
+    "absolute_kwh_discrepancy",
+    "candidate_flagged_record_count",
+    "candidate_flagged_records",
+    "verified_flagged_record_count",
+    "verified_flagged_records",
+    "verification_seconds",
+    "verification_time_components",
+    "candidate_storage_bytes",
+    "verification_storage_bytes",
+    "verification_storage_scope",
+    "storage_overhead_bytes",
+    "storage_overhead_ratio",
+    "tariff_scenarios"
+  ],
+  "properties": {
+    "schema_version": {"const": "decision-impact-v1"},
+    "status": {"const": "verified"},
+    "run_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "reconciliation_sha256": {"$ref": "#/$defs/sha256"},
+    "affected_meter_period_count": {"$ref": "#/$defs/count"},
+    "affected_meter_periods": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/affected_period"}
+    },
+    "absolute_kwh_discrepancy": {"$ref": "#/$defs/decimal"},
+    "candidate_flagged_record_count": {"$ref": "#/$defs/count"},
+    "candidate_flagged_records": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/flagged_record"}
+    },
+    "verified_flagged_record_count": {"$ref": "#/$defs/count"},
+    "verified_flagged_records": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/flagged_record"}
+    },
+    "verification_seconds": {"type": "number", "minimum": 0},
+    "verification_time_components": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gold_finalization_seconds",
+        "hadoop_oracle_seconds",
+        "layer_audit_seconds",
+        "reconciliation_seconds"
+      ],
+      "properties": {
+        "gold_finalization_seconds": {"type": "number", "minimum": 0},
+        "hadoop_oracle_seconds": {"type": "number", "minimum": 0},
+        "layer_audit_seconds": {"type": "number", "minimum": 0},
+        "reconciliation_seconds": {"type": "number", "minimum": 0}
+      }
+    },
+    "candidate_storage_bytes": {"$ref": "#/$defs/count"},
+    "verification_storage_bytes": {"$ref": "#/$defs/count"},
+    "verification_storage_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gold_source_events_bytes",
+        "gold_aggregates_bytes",
+        "hadoop_source_records_bytes",
+        "hadoop_aggregates_bytes",
+        "layer_dispositions_bytes",
+        "reconciliation_report_bytes",
+        "excludes"
+      ],
+      "properties": {
+        "gold_source_events_bytes": {"$ref": "#/$defs/count"},
+        "gold_aggregates_bytes": {"$ref": "#/$defs/count"},
+        "hadoop_source_records_bytes": {"$ref": "#/$defs/count"},
+        "hadoop_aggregates_bytes": {"$ref": "#/$defs/count"},
+        "layer_dispositions_bytes": {"$ref": "#/$defs/count"},
+        "reconciliation_report_bytes": {"$ref": "#/$defs/count"},
+        "excludes": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "storage_overhead_bytes": {"$ref": "#/$defs/count"},
+    "storage_overhead_ratio": {"type": ["number", "null"], "minimum": 0},
+    "tariff_scenarios": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {"$ref": "#/$defs/scenario"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "count": {"type": "integer", "minimum": 0},
+    "decimal": {"type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?$"},
+    "affected_period": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "meter_id",
+        "period_end_utc",
+        "candidate_kwh",
+        "verified_kwh",
+        "absolute_kwh_discrepancy"
+      ],
+      "properties": {
+        "meter_id": {"type": "string", "minLength": 1},
+        "period_end_utc": {"type": "string", "format": "date-time"},
+        "candidate_kwh": {"$ref": "#/$defs/decimal"},
+        "verified_kwh": {"$ref": "#/$defs/decimal"},
+        "absolute_kwh_discrepancy": {"$ref": "#/$defs/decimal"}
+      }
+    },
+    "flagged_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_event_id",
+        "meter_id",
+        "event_time_utc",
+        "category",
+        "detail"
+      ],
+      "properties": {
+        "source_event_id": {"type": ["string", "null"]},
+        "meter_id": {"type": ["string", "null"]},
+        "event_time_utc": {"type": ["string", "null"]},
+        "category": {"type": "string", "minLength": 1},
+        "detail": {"type": "string", "minLength": 1}
+      }
+    },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "normalized_rate",
+        "rate_unit",
+        "gross_exposure",
+        "residual_exposure_after_verification",
+        "monetary_interpretation"
+      ],
+      "properties": {
+        "label": {"const": "hypothetical normalized tariff scenario"},
+        "normalized_rate": {"enum": ["0.5", "1.0", "2.0"]},
+        "rate_unit": {"const": "scenario currency units per kWh"},
+        "gross_exposure": {"$ref": "#/$defs/decimal"},
+        "residual_exposure_after_verification": {"const": "0"},
+        "monetary_interpretation": {
+          "const": "scenario only; not an HKUST financial result"
+        }
+      }
+    }
+  }
+}

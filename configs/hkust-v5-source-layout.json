@@ -1,0 +1,22 @@
+{
+  "evidence": "Dryad v5 DOI 10.5061/dryad.k3j9kd5h6, archive SHA-256 f2446158573311bda2b1fbd8a114bb1479ac8d4a0e11c395ca3b920676eb0c8a, and authors' HKUST_Meter_Brick commit 73c619ae33fdba6ca40f70905cd505bd554b1918; bounded archive inspection on 2026-08-26 confirmed this layout for raw and every clean cadence directory",
+  "rules": [
+    {
+      "evidence": "Dryad v5 archive central-directory and representative workbook inspection confirmed GUI_NO.<meter>.xlsx, one Sheet1 worksheet, and the exact headers time and number; authors' Data Resampling.py and Missing_Rate_Sampling_Times.py independently name the same sheet and columns",
+      "expected_columns": [
+        "time",
+        "number"
+      ],
+      "header_row": 1,
+      "ignored_sheet_names": [],
+      "meter_id_column": null,
+      "meter_id_path_group": "meter_id",
+      "name": "hkust-dryad-v5-meter-workbook",
+      "relative_path_pattern": "(?:.*/)?GUI_NO\\.(?P<meter_id>[A-Z][0-9]{4})\\.xlsx",
+      "sheet_name": "Sheet1",
+      "timestamp_column": "time",
+      "value_column": "number"
+    }
+  ],
+  "schema_version": "source-layout-v1"
+}

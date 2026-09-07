@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "replay-manifest-v1.schema.json",
+  "title": "Deterministic Kafka replay manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "replay_run_id",
+    "snapshot_hash",
+    "schedule_hash",
+    "seed",
+    "partition_count",
+    "fault",
+    "requested_event_count",
+    "repetition",
+    "expected_delivery_count",
+    "expected_terminal_count",
+    "maximum_event_time_lateness_seconds"
+  ],
+  "properties": {
+    "schema_version": {"const": "replay-manifest-v1"},
+    "replay_run_id": {"type": "string", "minLength": 1},
+    "snapshot_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "schedule_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "seed": {"type": "integer"},
+    "partition_count": {"type": "integer", "minimum": 1},
+    "fault": {"enum": ["clean", "duplicate", "delayed", "malformed", "combined"]},
+    "requested_event_count": {"type": "integer", "minimum": 0},
+    "repetition": {"type": "integer", "minimum": 1},
+    "expected_delivery_count": {"type": "integer", "minimum": 0},
+    "expected_terminal_count": {"type": "integer", "minimum": 1},
+    "maximum_event_time_lateness_seconds": {"type": "number", "minimum": 0}
+  },
+  "additionalProperties": false
+}

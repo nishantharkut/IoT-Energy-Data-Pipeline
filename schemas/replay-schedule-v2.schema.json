@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://coursework.local/schemas/replay-schedule-v2.schema.json",
+  "title": "Disk-backed deterministic replay schedule metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "run_id", "seed", "partition_count", "fault",
+    "delivery_count", "delayed_source_event_ids", "schedule_sha256",
+    "maximum_event_time_lateness_seconds", "partition_delivery_counts"
+  ],
+  "properties": {
+    "schema_version": {"const": "replay-schedule-v2"},
+    "run_id": {"type": "string", "minLength": 1},
+    "seed": {"type": "integer"},
+    "partition_count": {"type": "integer", "minimum": 1},
+    "fault": {
+      "enum": ["clean", "duplicate", "delayed", "malformed", "combined"]
+    },
+    "delivery_count": {"type": "integer", "minimum": 1},
+    "delayed_source_event_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/sha256"}
+    },
+    "schedule_sha256": {"$ref": "#/$defs/sha256"},
+    "maximum_event_time_lateness_seconds": {"type": "number", "minimum": 0},
+    "partition_delivery_counts": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {"pattern": "^(0|[1-9][0-9]*)$"},
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

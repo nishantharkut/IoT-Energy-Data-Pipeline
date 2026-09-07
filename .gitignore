@@ -86,7 +86,7 @@ checkpoints/
 
 # HDFS / Kafka volumes
 hdfs/
-hadoop/
+/hadoop-runtime/
 kafka-data/
 kafka-volumes/
 kafka-logs/
@@ -101,3 +101,4 @@ logs/
 # Caches
 *.cache
 .caches/
+tmp/

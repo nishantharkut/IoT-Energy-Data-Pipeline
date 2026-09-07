@@ -18,7 +18,9 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 
-dependencies = []
+dependencies = [
+    "tzdata>=2024.1",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -47,11 +49,15 @@ dashboard = [
 scan-independence = "scripts.scan_independence:main"
 
 [tool.setuptools]
-packages = ["iot_energy_pipeline", "scripts"]
+packages = ["iot_energy_pipeline", "scripts", "jobs", "jobs.spark", "jobs.hadoop", "dashboard"]
 
 [tool.setuptools.package-dir]
 "iot_energy_pipeline" = "src/iot_energy_pipeline"
 "scripts" = "scripts"
+"jobs" = "jobs"
+"jobs.spark" = "jobs/spark"
+"jobs.hadoop" = "jobs/hadoop"
+"dashboard" = "dashboard"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

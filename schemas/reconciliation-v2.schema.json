@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://coursework.local/schemas/reconciliation-v2.schema.json",
+  "title": "Spark-Hadoop exact reconciliation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "run_id",
+    "replay_manifest_hash",
+    "layer_counts",
+    "aggregate_comparison",
+    "source_record_comparison",
+    "bindings",
+    "reconciliation_seconds"
+  ],
+  "properties": {
+    "schema_version": {"const": "reconciliation-v2"},
+    "status": {"enum": ["passed", "failed"]},
+    "run_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "replay_manifest_hash": {"$ref": "#/$defs/sha256"},
+    "layer_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bronze_deliveries",
+        "parsed_valid_deliveries",
+        "quarantine_deliveries",
+        "silver_deliveries",
+        "duplicate_valid_deliveries",
+        "late_valid_deliveries",
+        "terminal_records"
+      ],
+      "properties": {
+        "bronze_deliveries": {"$ref": "#/$defs/count"},
+        "parsed_valid_deliveries": {"$ref": "#/$defs/count"},
+        "quarantine_deliveries": {"$ref": "#/$defs/count"},
+        "silver_deliveries": {"$ref": "#/$defs/count"},
+        "duplicate_valid_deliveries": {"$ref": "#/$defs/count"},
+        "late_valid_deliveries": {"$ref": "#/$defs/count"},
+        "terminal_records": {"$ref": "#/$defs/count"}
+      }
+    },
+    "aggregate_comparison": {"$ref": "#/$defs/comparison"},
+    "source_record_comparison": {"$ref": "#/$defs/comparison"},
+    "bindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "canonical_ndjson_sha256",
+        "gold_manifest_sha256",
+        "hadoop_manifest_sha256",
+        "layer_audit_manifest_sha256",
+        "silver_candidate_events_sha256"
+      ],
+      "properties": {
+        "canonical_ndjson_sha256": {"$ref": "#/$defs/sha256"},
+        "gold_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "hadoop_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "layer_audit_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "silver_candidate_events_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "reconciliation_seconds": {"type": "number", "minimum": 0}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "count": {"type": "integer", "minimum": 0},
+    "comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "spark_record_count",
+        "hadoop_record_count",
+        "exact_fields",
+        "errors"
+      ],
+      "properties": {
+        "spark_record_count": {"$ref": "#/$defs/count"},
+        "hadoop_record_count": {"$ref": "#/$defs/count"},
+        "exact_fields": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "errors": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

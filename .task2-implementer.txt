@@ -1,0 +1,68 @@
+You are the fresh Task 2 implementation agent in C:/N Drive/Research/Cukd-XAI/IoT-Energy-Data-Pipeline on feat/coursework-foundation. Implement only Task 2 from docs/superpowers/plans/2026-08-25-coursework-system.md. Do not commit or push. Do not run or download the real dataset. Use strict TDD: create tests first, run and record RED, then implement, then verify GREEN. Work only in:
+- src/iot_energy_pipeline/manifests.py
+- src/iot_energy_pipeline/profile.py
+- src/iot_energy_pipeline/cli.py
+- tests/fixtures/hkust-mini/README.md
+- tests/unit/test_manifests.py
+- tests/unit/test_profile.py
+- docs/dataset.md
+
+Implementation contract:
+1. Public APIs:
+   register_dataset(root: Path, output: Path, *, dataset_version: str, source_variant: Literal['raw','clean']) -> DatasetManifest
+   profile_dataset(manifest: DatasetManifest, output: Path) -> DatasetProfile
+2. Use frozen dataclasses for manifest/profile records and typed pathlib APIs. No pydantic. JSON must be UTF-8, canonical with sorted keys, deterministic indentation/newline, and byte-identical across repeated runs. Do not serialize timestamps of execution or absolute local root paths.
+3. Registration:
+- root must exist and be a directory.
+- dataset_version is nonempty after stripping.
+- source_variant is exactly raw or clean.
+- recursively register regular .xlsx and .ttl files only, ordered by POSIX relative path after a deterministic case-sensitive sort.
+- refuse an empty registration.
+- stream SHA-256 and record relative_path, byte_size, sha256, and media_kind workbook or brick_ttl.
+- detect mixed source variants from path components and file names. A raw registration rejects any path token that unambiguously denotes clean or cleaned. A clean registration rejects any token that unambiguously denotes raw. Tokenize on non-alphanumeric boundaries so words such as drawing are not false raw matches.
+- never follow directory symlinks and reject a registered file symlink.
+- write the manifest atomically to the exact output file path, creating its parent.
+- runtime manifest may retain root for later profiling, but serialized JSON must remain portable and omit the absolute root.
+- provide DatasetManifest.from_json(path, root=...) and validate each registered file still exists and matches size/hash before profiling.
+4. Profiling:
+- read registered workbooks only with openpyxl read_only=True and data_only=True. TTL files appear in manifest totals but are not parsed in Task 2.
+- record deterministic per-workbook/per-sheet structure: relative path, sheet title, max_row, max_column, row-1 header texts in column order.
+- profile non-header cells without interpreting semantics: null count, native datetime/date/time count, numeric cell count excluding bool, numeric-text count parseable by Decimal, and other-text count. Preserve no sample values.
+- profile timestamp-looking text only by explicit syntactic ISO-8601 parsing, without assigning a timezone. Record the count separately. Do not guess a timezone, measurement kind, or unit.
+- profile-level measurement_kind and unit are always the literal UNKNOWN in Task 2.
+- missing, size-changed, hash-changed, corrupt workbook, or duplicate sheet title is an operational ValueError or RuntimeError with source path context.
+- atomically write deterministic profile JSON to exact output path.
+5. CLI via argparse with commands register and profile. `python -m iot_energy_pipeline.cli register` accepts root, output, dataset-version, source-variant. Profile accepts manifest, root, output. Return 0 success and 2 for operational/user errors with concise stderr. Never print absolute source paths on success. No secrets.
+6. Tests use tmp_path and generate tiny .xlsx files using openpyxl. Never touch Git. Cover:
+- deterministic relative path ordering and byte-identical manifest output
+- streamed hashes and sizes
+- missing root/file, empty registration, invalid variant/version
+- raw/clean mixing with no false match for a name containing drawing
+- symlink rejection when supported
+- manifest reload and integrity verification
+- sheet/header discovery, counts for null, numeric, numeric-text, datetime, ISO timestamp text, other text, and booleans treated as other/non-numeric according to a declared test expectation
+- UNKNOWN unit and measurement kind
+- corrupt workbook failure with path context
+- byte-identical profile output
+- CLI register/profile happy path and invalid input exit 2
+7. docs/dataset.md must be concise and factual. Include:
+- Scientific Data article DOI https://doi.org/10.1038/s41597-024-04106-1
+- publisher correction https://doi.org/10.1038/s41597-025-04435-9
+- official Dryad dataset https://doi.org/10.5061/dryad.k3j9kd5h6
+- related public repository https://github.com/LiMingchen159/HKUST_Meter_Brick
+- Dryad version 5 metadata: title A 2.5-year campus-level smart meter database with equipment data for energy analytics, 1,432,485,068 total bytes, files All_Data.zip and README.md, All_Data.zip SHA-256 f2446158573311bda2b1fbd8a114bb1479ac8d4a0e11c395ca3b920676eb0c8a.
+- manual browser download from Dryad. Do not add an automated downloader.
+- user places one source variant under data/raw/hkust/<dataset-version>/ or data/clean/hkust/<dataset-version>/ and registers that variant root. Do not claim this is the exact archive layout.
+- source data is local and ignored by Git.
+- example commands use only repository-relative paths, no local drive paths.
+- units remain UNKNOWN unless official metadata and later explicit rules prove them.
+8. tests/fixtures/hkust-mini/README.md explains fixtures are generated dynamically and no source data is redistributed.
+9. ASCII only. No prior-research references. No unrelated abstractions or dependencies. Keep production and tests focused.
+10. Verification:
+   .venv\Scripts\python -m pip install -e ".[dev,dataset]"
+   .venv\Scripts\python -m pytest tests/unit/test_manifests.py tests/unit/test_profile.py -q
+   .venv\Scripts\ruff check src scripts tests
+   .venv\Scripts\ruff format --check src scripts tests
+   .venv\Scripts\mypy src scripts
+   git diff --check
+Run the repository independence scanner after implementation, noting that untracked Task 2 files will be scanned again after controller staging. Self-review each requirement. No commit.

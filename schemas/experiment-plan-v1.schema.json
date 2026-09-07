@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://coursework.local/schemas/experiment-plan-v1.schema.json",
+  "title": "Deferred designated-machine experiment plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "status", "execution_gate", "matrix_sha256",
+    "snapshot_manifest_sha256", "canonical_ndjson_sha256",
+    "machine_metadata_sha256", "full_event_count", "summary_statistics",
+    "storage_formats", "query_names", "normalized_tariff_rates",
+    "monetary_interpretation", "runs"
+  ],
+  "properties": {
+    "schema_version": {"const": "experiment-plan-v1"},
+    "status": {"const": "planned_not_executed"},
+    "execution_gate": {"const": "explicit execute command required"},
+    "matrix_sha256": {"$ref": "#/$defs/sha256"},
+    "snapshot_manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "canonical_ndjson_sha256": {"$ref": "#/$defs/sha256"},
+    "machine_metadata_sha256": {"$ref": "#/$defs/sha256"},
+    "full_event_count": {"type": "integer", "minimum": 1000000},
+    "summary_statistics": {
+      "const": ["median", "minimum", "maximum"]
+    },
+    "storage_formats": {
+      "const": [
+        "ndjson", "parquet_zstd_unpartitioned", "parquet_zstd_partitioned"
+      ]
+    },
+    "query_names": {
+      "const": ["meter", "building", "time_window", "quality", "exposure"]
+    },
+    "normalized_tariff_rates": {"const": [0.5, 1.0, 2.0]},
+    "monetary_interpretation": {
+      "const": "hypothetical scenarios; not HKUST results"
+    },
+    "runs": {
+      "type": "array",
+      "minItems": 15,
+      "items": {"$ref": "#/$defs/run"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "run": {
+      "type": "object",
+      "required": [
+        "run_id", "experiment", "fault", "repetition", "event_count",
+        "watermark", "max_offsets_per_trigger", "partition_count", "seed",
+        "status", "publication_requirements", "live_demo_eligible"
+      ],
+      "properties": {
+        "run_id": {"type": "string", "minLength": 1},
+        "experiment": {
+          "enum": ["correctness", "recovery", "watermark", "scale"]
+        },
+        "fault": {
+          "enum": ["clean", "duplicate", "delayed", "malformed", "combined"]
+        },
+        "repetition": {"type": "integer", "minimum": 1},
+        "event_count": {
+          "oneOf": [
+            {"const": "fixture"},
+            {"type": "integer", "minimum": 100000}
+          ]
+        },
+        "watermark": {"type": "string", "minLength": 1},
+        "max_offsets_per_trigger": {"type": "integer", "minimum": 1},
+        "partition_count": {"type": "integer", "minimum": 1},
+        "seed": {"type": "integer"},
+        "status": {"const": "pending"},
+        "publication_requirements": {
+          "type": "array", "minItems": 3, "items": {"type": "string"}
+        },
+        "live_demo_eligible": {"type": "boolean"},
+        "mode": {"enum": ["uninterrupted", "interrupted_resumed"]}
+      },
+      "additionalProperties": false
+    }
+  }
+}

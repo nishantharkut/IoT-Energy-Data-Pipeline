@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://coursework.local/schemas/storage-benchmark-v1.schema.json",
+  "title": "NDJSON and Parquet storage benchmark",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "run_id", "record_count", "formats"],
+  "properties": {
+    "schema_version": {"const": "storage-benchmark-v1"},
+    "status": {"const": "complete"},
+    "run_id": {"type": "string", "minLength": 1},
+    "record_count": {"type": "integer", "minimum": 1},
+    "formats": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ndjson", "parquet_zstd_unpartitioned", "parquet_zstd_partitioned"
+      ],
+      "properties": {
+        "ndjson": {"$ref": "#/$defs/ndjson"},
+        "parquet_zstd_unpartitioned": {
+          "$ref": "#/$defs/parquet_zstd_unpartitioned"
+        },
+        "parquet_zstd_partitioned": {
+          "$ref": "#/$defs/parquet_zstd_partitioned"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "ndjson": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "byte_size", "file_count", "sha256", "write_seconds",
+        "relative_to_ndjson"
+      ],
+      "properties": {
+        "byte_size": {"type": "integer", "minimum": 1},
+        "file_count": {"const": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "write_seconds": {"const": null},
+        "relative_to_ndjson": {"const": 1.0}
+      }
+    },
+    "parquet_zstd_unpartitioned": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "byte_size", "file_count", "write_seconds", "relative_to_ndjson"
+      ],
+      "properties": {
+        "byte_size": {"type": "integer", "minimum": 1},
+        "file_count": {"type": "integer", "minimum": 1},
+        "write_seconds": {"type": "number", "minimum": 0},
+        "relative_to_ndjson": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "parquet_zstd_partitioned": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "byte_size", "file_count", "partition_columns", "write_seconds",
+        "relative_to_ndjson"
+      ],
+      "properties": {
+        "byte_size": {"type": "integer", "minimum": 1},
+        "file_count": {"type": "integer", "minimum": 1},
+        "partition_columns": {"const": ["source_variant", "meter_id"]},
+        "write_seconds": {"type": "number", "minimum": 0},
+        "relative_to_ndjson": {"type": "number", "exclusiveMinimum": 0}
+      }
+    }
+  }
+}
